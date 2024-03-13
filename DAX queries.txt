@@ -1,0 +1,93 @@
+DAX
+
+Total Head Count
+
+=AVERAGEX( 
+SUMMARIZE(Data, Data[Month], "HC", CALCULATE( COUNTROWS(Data), Data[RsnCategory]="-")),[HC])
+
+
+-----------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------
+
+Monthly Head Count
+
+=VAR CM = MAX( Data[Month])
+VAR PM = EDATE( CM, -1)
+VAR CM_HC = CALCULATE ([Total Head Count], Data[Month] = CM,ALL (Data[Month Name], Data[Year]))
+VAR PM_HC = CALCULATE ([Total Head Count], Data[Month] = PM, ALL(Data[Month Name], Data[Year]))
+
+RETURN
+
+    IF(
+            HASONEVALUE (Data[Month]),
+            DIVIDE ( CM_HC + PM_HC, 2, BLANK()),
+            [Total Head Count]
+      )
+
+-------------------------------------------------------------------------------------------------------
+
+
+Involuntary Count
+
+=CALCULATE( COUNTROWS( Data), Data[RsnCategory] = "Involuntary")
+
+-------------------------------------------------------------------------------------------------------
+
+
+Voluntary Count
+
+=CALCULATE( COUNTROWS(Data), Data[RsnCategory] = "Voluntary")
+
+-------------------------------------------------------------------------------------------------------
+
+Voluntary Attrition %
+
+=DIVIDE ([Voluntary Count], [Monthly Head Count], BLANK())
+
+-------------------------------------------------------------------------------------------------------
+
+In-Voluntary Attrition %
+
+=DIVIDE ([Involuntary Count], [ Monthly Head Count], BLANK())
+
+-------------------------------------------------------------------------------------------------------
+
+Total Attrition
+
+
+=DIVIDE([Involuntary Count]+[Voluntary Count],[Monthly Head Count],BLANK())
+
+
+
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+
+
+
+YTD Attrition 
+
+=VAR YTD_Att =
+    CALCULATE (
+        [Involuntary Count] + [Voluntary Count],
+        ALL ( Data[Month Name], Data[Year] ),
+        DATESYTD ( Data[Month], "3-31" )    )
+VAR YTD_HC =
+    CALCULATE (
+        [Total Head Count],
+        ALL ( Data[Month Name], Data[Year] ),
+        DATESYTD ( Data[Month], "3-31" )
+   )
+RETURN
+    DIVIDE ( YTD_Att, YTD_HC, BLANK () )
+
+
+----------------------------------------------------------------------------------------------------------
+
+
+Annualized Attrition % 
+
+=VAR Month_Count =
+    CALCULATE ( DISTINCTCOUNT ( Data[Month] ), DATESYTD ( Data[Month], "3-31" ),ALL(Data[Month Name],Data[Year]) )
+RETURN
+    [YTD Attrition] * DIVIDE ( 12, Month_Count, BLANK () )
+
